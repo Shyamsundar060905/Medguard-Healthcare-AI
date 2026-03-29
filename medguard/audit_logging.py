@@ -9,6 +9,13 @@ class AccessControl:
     This class enforces role-based access control and logs all access to sensitive data.
     """
 
+    DEFAULT_ROLE_POLICIES = {
+        "admin": ["view", "edit", "approve", "audit", "recommend"],
+        "doctor": ["view", "edit", "recommend"],
+        "nurse": ["view", "edit"],
+        "patient": ["view", "consent"]
+    }
+
     def __init__(self, allowed_roles: List[str]) -> None:
         """
         Initialize the AccessControl class with a list of allowed roles.
@@ -16,6 +23,10 @@ class AccessControl:
         :param allowed_roles: A list of roles that are authorized to access sensitive data.
         """
         self.allowed_roles = allowed_roles
+        self.policies = {
+            role: self.DEFAULT_ROLE_POLICIES.get(role, ["view"])
+            for role in allowed_roles
+        }
         logger.info(
             "AccessControl initialized with roles: {}", allowed_roles
         )
@@ -28,16 +39,23 @@ class AccessControl:
         :param action: The action the user is attempting to perform.
         :return: True if access is granted, False otherwise.
         """
-        if user_role in self.allowed_roles:
-            logger.info(
-                f"Access granted for role '{user_role}' to perform action: {action}"
-            )
-            return True
-        else:
+        if user_role not in self.allowed_roles:
             logger.warning(
-                f"Access denied for role '{user_role}' to perform action: {action}"
+                f"Access denied for role '{user_role}' to perform action: {action} (role not allowed)"
             )
             return False
+
+        allowed_actions = self.policies.get(user_role, [])
+        if action not in allowed_actions:
+            logger.warning(
+                f"Access denied for role '{user_role}' to perform action: {action} (action not permitted)"
+            )
+            return False
+
+        logger.info(
+            f"Access granted for role '{user_role}' to perform action: {action}"
+        )
+        return True
 
 
 # Example usage

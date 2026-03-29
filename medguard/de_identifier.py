@@ -27,6 +27,8 @@ class PHICategory(Enum):
     IP_ADDRESS = "IP_ADDRESS"
     URL = "URL"
     ACCOUNT = "ACCOUNT_NUMBER"
+    AADHAAR = "AADHAAR_NUMBER"
+    PAN = "PAN_NUMBER"
 
 @dataclass
 class DeidentificationPattern:
@@ -68,7 +70,9 @@ class Deidentifier:
         PHICategory.IP_ADDRESS: r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
         # Fixed URL pattern
         PHICategory.URL: r"https?://[\w\.-]+\.\w+(?:/[\w\-./?%&=]*)?",
-        PHICategory.ACCOUNT: r"\b(?:Acct|Account)\s*(?:#|Number)?:?\s*\d{6,12}\b"
+        PHICategory.ACCOUNT: r"\b(?:Acct|Account)\s*(?:#|Number)?:?\s*\d{6,12}\b",
+        PHICategory.AADHAAR: r"\b\d{4}\s?\d{4}\s?\d{4}\b",
+        PHICategory.PAN: r"\b[A-Z]{5}\d{4}[A-Z]\b"
     }
 
     def __init__(self, 
@@ -92,12 +96,13 @@ class Deidentifier:
         """Create default pattern dictionary with metadata."""
         patterns = {}
         for category, pattern in self.DEFAULT_PATTERNS.items():
+            sensitivity = 5 if category in [PHICategory.SSN, PHICategory.MRN, PHICategory.AADHAAR, PHICategory.PAN] else 3
             patterns[category] = DeidentificationPattern(
                 category=category,
                 pattern=pattern,
                 replacement=f"[{category.value}]",
                 description=f"Default pattern for {category.value}",
-                sensitivity=4 if category in [PHICategory.SSN, PHICategory.MRN] else 3
+                sensitivity=sensitivity
             )
         return patterns
 
